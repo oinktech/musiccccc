@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>musiccccc - 音樂播放器</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.10/lib/marked.min.js"></script>
+    <!-- Add this to your <head> section -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         /* 基本樣式設置 */
@@ -231,7 +234,7 @@
         let musicData = [];
 
         // 加載音樂資料 JSON
-        fetch('musicData.json')
+        fetch('https://oinktech.github.io/musiccccc/musicData.json')
             .then(response => response.json())
             .then(data => {
                 musicData = data.songs;
@@ -267,14 +270,26 @@
             });
 
         // 顯示歌詞
-        function fetchLyrics(lyricsFile) {
-            fetch(lyricsFile)
-                .then(response => response.text())
-                .then(lyrics => {
-                    lyricsContainer.innerHTML = marked(lyrics);
-                })
-                .catch(err => console.error('Failed to load lyrics:', err));
-        }
+        // 顯示歌詞
+function fetchLyrics(lyricsFile) {
+    fetch(lyricsFile)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('無法加載歌詞文件: ' + lyricsFile);
+            }
+            return response.text();
+        })
+        .then(lyrics => {
+            // 使用 marked.js 解析歌詞並顯示
+            lyricsContainer.innerHTML = marked(lyrics);
+        })
+        .catch(err => {
+            console.error('Failed to load lyrics:', err);
+            lyricsContainer.innerHTML = `<p>無法加載歌詞，請稍後重試。</p>`;
+        });
+}
+
+
 
         // 控制播放/暫停
         function togglePlay() {
