@@ -60,6 +60,4 @@ I wanna die, I'm losing my fight
 I wanna die, can’t keep living this lie  
 愛情的結局像夜空般無情沉黙  
 I wanna die, with a silent goodbye  
-Baby, I’m broken, so shattered inside  
-
-Hope this song captures the mix of deep emotions and raw pain you're aiming for.
+Baby, I’m broken, so shattered inside
