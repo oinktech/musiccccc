@@ -230,7 +230,7 @@
                     let song = musicData[index];
                     audio.src = song.file;
                     songTitle.textContent = song.title;
-                    artistName.textContent = "歌手名稱"; // 可以在 JSON 中添加歌手名稱
+                    artistName.textContent = ""; // 可以在 JSON 中添加歌手名稱
                     albumCover.src = song.coverImage;
                     loadLyrics(song.lyricsFile);
                     progressBar.value = 0;
