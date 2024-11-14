@@ -33,6 +33,12 @@
             width: 100%;
             text-align: center;
             position: relative;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
 
         .sidebar {
@@ -106,10 +112,13 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.3s;
+            transform: scale(1);
+            transition: transform 0.2s ease-in-out;
         }
 
         .controls button:hover {
             background-color: #444;
+            transform: scale(1.1);
         }
 
         #progress-bar {
@@ -120,14 +129,34 @@
             cursor: pointer;
         }
 
+        #progress-bar::-webkit-slider-thumb {
+            width: 15px;
+            height: 15px;
+            background-color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #progress-bar::-webkit-slider-thumb:hover {
+            background-color: #ddd;
+        }
+
         #lyrics-container {
             margin-top: 20px;
             padding: 0 20px;
             font-size: 16px;
             line-height: 1.6;
             text-align: left;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
+            opacity: 0;
+            animation: fadeInLyrics 1s ease-out forwards;
+        }
+
+        @keyframes fadeInLyrics {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
 
         footer {
@@ -145,6 +174,26 @@
             border-radius: 12px;
             margin-bottom: 15px;
             object-fit: cover;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            transition: transform 0.3s, rotate 1s linear infinite;
+        }
+
+        #album-cover.playing {
+            transform: rotate(360deg);
+        }
+
+        .search-bar input {
+            padding: 10px;
+            background-color: #333;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            width: 200px;
+            margin-bottom: 15px;
+        }
+
+        .search-bar input::placeholder {
+            color: #bbb;
         }
     </style>
 </head>
@@ -152,6 +201,10 @@
 
     <div class="music-player">
         <header>musiccccc</header>
+
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="搜索歌曲或歌手" />
+        </div>
 
         <div id="album-cover-container">
             <img id="album-cover" src="default-cover.jpg" alt="專輯封面" />
@@ -205,22 +258,6 @@
             .then(data => {
                 musicData = data.songs;
 
-                // 顯示歌曲列表
-                function updateSongList() {
-                    songList.innerHTML = '';
-                    musicData.forEach((song, index) => {
-                        let li = document.createElement('li');
-                        li.textContent = song.title;
-                        li.onclick = () => {
-                            currentTrackIndex = index;
-                            loadTrack(index);
-                            audio.play();
-                        };
-                        songList.appendChild(li);
-                    });
-                }
-
-                // 加載歌曲
                 function loadTrack(index) {
                     if (index < 0 || index >= musicData.length) {
                         console.error('無效的歌曲索引');
@@ -230,86 +267,84 @@
                     let song = musicData[index];
                     audio.src = song.file;
                     songTitle.textContent = song.title;
-                    artistName.textContent = ""; // 可以在 JSON 中添加歌手名稱
-                    albumCover.src = song.coverImage;
-                    loadLyrics(song.lyricsFile);
+                    artistName.textContent = song.artist;
+                    albumCover.src = song.cover;
+                    updateLyrics(song.lyrics);
                     progressBar.value = 0;
-                    playPauseButton.innerHTML = '<i class="fas fa-play"></i> 播放';
+                    currentTimeDisplay.textContent = '00:00';
                     isPlaying = false;
+                    playPauseButton.innerHTML = `<i class="fas fa-play"></i> 播放`;
 
-                    audio.onended = function() {
-                        nextTrack();
-                    };
+                    // 更新歌曲列表
+                    songList.innerHTML = '';
+                    musicData.forEach((song, index) => {
+                        let li = document.createElement('li');
+                        li.textContent = song.title;
+                        li.onclick = () => loadTrack(index);
+                        songList.appendChild(li);
+                    });
                 }
 
-                // 讀取歌詞
-                function loadLyrics(lyricsFile) {
-                    fetch(lyricsFile)
-                        .then(response => response.text())
-                        .then(lyrics => {
-                            lyricsContainer.innerHTML = '';
-                            let lines = lyrics.split('\n');
-                            lines.forEach(line => {
-                                let p = document.createElement('p');
-                                p.textContent = line;
-                                lyricsContainer.appendChild(p);
-                            });
-                        });
-                }
-
-                // 播放與暫停控制
-                function togglePlay() {
-                    if (isPlaying) {
-                        audio.pause();
-                        playPauseButton.innerHTML = '<i class="fas fa-play"></i> 播放';
-                    } else {
-                        audio.play();
-                        playPauseButton.innerHTML = '<i class="fas fa-pause"></i> 暫停';
-                    }
-                    isPlaying = !isPlaying;
-                }
-
-                // 下一首
-                function nextTrack() {
-                    currentTrackIndex = (currentTrackIndex + 1) % musicData.length;
-                    loadTrack(currentTrackIndex);
-                    audio.play();
-                }
-
-                // 上一首
-                function prevTrack() {
-                    currentTrackIndex = (currentTrackIndex - 1 + musicData.length) % musicData.length;
-                    loadTrack(currentTrackIndex);
-                    audio.play();
-                }
-
-                // 更新進度條
-                function updateProgress() {
-                    let progress = (audio.currentTime / audio.duration) * 100;
-                    progressBar.value = progress;
-                    currentTimeDisplay.textContent = formatTime(audio.currentTime);
-                }
-
-                // 格式化時間
-                function formatTime(seconds) {
-                    let mins = Math.floor(seconds / 60);
-                    let secs = Math.floor(seconds % 60);
-                    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                }
-
-                // 初始載入第一首歌曲
                 loadTrack(currentTrackIndex);
-
-                // 自動更新進度條
-                audio.ontimeupdate = updateProgress;
-
-                // 顯示歌曲列表
-                updateSongList();
             });
 
-        // 側邊欄切換功能
+        // 控制播放/暫停
+        function togglePlay() {
+            if (isPlaying) {
+                audio.pause();
+                playPauseButton.innerHTML = `<i class="fas fa-play"></i> 播放`;
+            } else {
+                audio.play();
+                playPauseButton.innerHTML = `<i class="fas fa-pause"></i> 暫停`;
+                albumCover.classList.add('playing');
+            }
+            isPlaying = !isPlaying;
+        }
+
+        // 控制上一首
+        function prevTrack() {
+            currentTrackIndex = (currentTrackIndex - 1 + musicData.length) % musicData.length;
+            loadTrack(currentTrackIndex);
+            togglePlay();
+        }
+
+        // 控制下一首
+        function nextTrack() {
+            currentTrackIndex = (currentTrackIndex + 1) % musicData.length;
+            loadTrack(currentTrackIndex);
+            togglePlay();
+        }
+
+        // 更新歌曲進度
+        audio.ontimeupdate = function() {
+            let currentTime = audio.currentTime;
+            let duration = audio.duration;
+            if (duration > 0) {
+                progressBar.value = (currentTime / duration) * 100;
+            }
+            let minutes = Math.floor(currentTime / 60);
+            let seconds = Math.floor(currentTime % 60);
+            currentTimeDisplay.textContent = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        // 更新進度條
+        function updateProgress() {
+            let progress = progressBar.value;
+            audio.currentTime = (progress / 100) * audio.duration;
+        }
+
+        // 顯示歌詞
+        function updateLyrics(lyrics) {
+            lyricsContainer.innerHTML = marked(lyrics);
+        }
+
+        // 切換側邊欄
         function toggleSidebar() {
             sidebar.classList.toggle('open');
+        }
+
+        audio.onended = function() {
+            nextTrack();
         }
     </script>
 
