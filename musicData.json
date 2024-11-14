@@ -10,31 +10,31 @@
             "title": "I wanna die 01-2",
             "file": "0001 (1).mp3",
             "coverImage": "cover.jpg",
-            "lyricsFile": "song1.txt"
+            "lyricsFile": "song1.md"
         },
         {
             "title": "I wanna die 02-1",
             "file": "0002.mp3",
             "coverImage": "cover.jpg",
-            "lyricsFile": "song2.txt"
+            "lyricsFile": "song2.mr"
         },
         {
             "title": "I wanna die 02-2",
             "file": "0002 (1).mp3",
             "coverImage": "cover.jpg",
-            "lyricsFile": "song2.txt"
+            "lyricsFile": "song2.md"
         },
         {
             "title": "I wanna die 03-1",
             "file": "0003.mp3",
             "coverImage": "cover.jpg",
-            "lyricsFile": "song3.txt"
+            "lyricsFile": "song3.md"
         },
         {
             "title": "I wanna die 03-2",
             "file": "0003 (1).mp3",
             "coverImage": "cover.jpg",
-            "lyricsFile": "song3.txt"
+            "lyricsFile": "song3.md"
         }
     ]
 }
