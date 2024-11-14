@@ -12,7 +12,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: #f0f0f0;
             color: #333;
         }
 
@@ -24,11 +24,13 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             text-align: center;
+            position: relative;
         }
 
         header {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
+            color: #3faffa;
             margin-bottom: 20px;
         }
 
@@ -37,10 +39,11 @@
         }
 
         #album-cover {
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             object-fit: cover;
             border-radius: 8px;
+            transition: transform 0.3s ease;
         }
 
         #song-info {
@@ -48,13 +51,14 @@
         }
 
         #song-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
             margin: 5px 0;
+            color: #333;
         }
 
         #artist-name {
-            font-size: 16px;
+            font-size: 18px;
             color: #777;
         }
 
@@ -65,7 +69,7 @@
         }
 
         .controls button {
-            padding: 10px 20px;
+            padding: 12px 20px;
             font-size: 18px;
             cursor: pointer;
             background-color: #3faffa;
@@ -73,6 +77,7 @@
             border: none;
             border-radius: 4px;
             transition: background-color 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .controls button:hover {
@@ -85,7 +90,7 @@
         }
 
         #current-time {
-            font-size: 14px;
+            font-size: 16px;
             color: #555;
         }
 
@@ -95,6 +100,10 @@
             overflow-y: auto;
             font-size: 14px;
             color: #555;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
         }
 
         footer {
@@ -123,6 +132,7 @@
             color: white;
             padding: 20px;
             transition: left 0.3s ease;
+            z-index: 999;
         }
 
         .sidebar.open {
@@ -138,10 +148,27 @@
             padding: 10px;
             cursor: pointer;
             border-bottom: 1px solid #444;
+            transition: background-color 0.3s ease;
         }
 
         .sidebar ul li:hover {
             background-color: #444;
+        }
+
+        /* 讓內容區域能點擊側邊欄以外區域時自動收回 */
+        .content-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .content-overlay.active {
+            display: block;
         }
     </style>
 </head>
@@ -184,6 +211,8 @@
         <ul id="song-list"></ul>
     </div>
 
+    <div class="content-overlay" id="overlay" onclick="closeSidebar()"></div>
+
     <script>
         let audio = new Audio();
         let isPlaying = false;
@@ -196,6 +225,7 @@
         let playPauseButton = document.getElementById('play-pause');
         let sidebar = document.getElementById('sidebar');
         let songList = document.getElementById('song-list');
+        let overlay = document.getElementById('overlay');
 
         let currentTrackIndex = 0;
         let musicData = [];
@@ -254,52 +284,50 @@
             } else {
                 audio.play();
                 playPauseButton.innerHTML = `<i class="fas fa-pause"></i> 暫停`;
-                albumCover.classList.add('playing');
             }
             isPlaying = !isPlaying;
         }
 
-        // 控制上一首
-        function prevTrack() {
-            currentTrackIndex = (currentTrackIndex - 1 + musicData.length) % musicData.length;
-            loadTrack(currentTrackIndex);
-            togglePlay();
+        // 更新進度條
+        audio.ontimeupdate = () => {
+            let progress = (audio.currentTime / audio.duration) * 100 || 0;
+            progressBar.value = progress;
+
+            let minutes = Math.floor(audio.currentTime / 60);
+            let seconds = Math.floor(audio.currentTime % 60);
+            currentTimeDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        };
+
+        // 跳轉進度條
+        function updateProgress() {
+            let progress = progressBar.value;
+            audio.currentTime = (progress / 100) * audio.duration;
         }
 
-        // 控制下一首
+        // 播放下一首
         function nextTrack() {
             currentTrackIndex = (currentTrackIndex + 1) % musicData.length;
             loadTrack(currentTrackIndex);
             togglePlay();
         }
 
-        // 更新歌曲進度
-        audio.ontimeupdate = function() {
-            let currentTime = audio.currentTime;
-            let duration = audio.duration;
-            if (duration > 0) {
-                progressBar.value = (currentTime / duration) * 100;
-            }
-            let minutes = Math.floor(currentTime / 60);
-            let seconds = Math.floor(currentTime % 60);
-            currentTimeDisplay.textContent = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        // 播放上一首
+        function prevTrack() {
+            currentTrackIndex = (currentTrackIndex - 1 + musicData.length) % musicData.length;
+            loadTrack(currentTrackIndex);
+            togglePlay();
         }
 
-        // 更新進度條
-        function updateProgress() {
-            let progress = progressBar.value;
-            audio.currentTime = (progress / 100) * audio.duration;
-        }
-
-        // 切換側邊欄
+        // 控制側邊欄顯示/隱藏
         function toggleSidebar() {
             sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
         }
 
-        audio.onended = function() {
-            nextTrack();
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
         }
     </script>
-
 </body>
 </html>
