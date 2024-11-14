@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>musiccccc - 音樂播放器</title>
     <!-- Add this to your <head> section -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         /* 基本樣式設置 */
@@ -15,14 +13,14 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
-            color: #333;
+            background-color: #121212;
+            color: #fff;
         }
 
         .music-player {
             max-width: 600px;
             margin: 50px auto;
-            background-color: #fff;
+            background-color: #1e1e1e;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -57,12 +55,12 @@
             font-size: 22px;
             font-weight: bold;
             margin: 5px 0;
-            color: #333;
+            color: #fff;
         }
 
         #artist-name {
             font-size: 18px;
-            color: #777;
+            color: #bbb;
         }
 
         .controls {
@@ -90,11 +88,24 @@
         #progress-bar {
             width: 100%;
             margin-bottom: 10px;
+            background-color: #444;
+            border-radius: 8px;
+            height: 10px;
+            cursor: pointer;
+        }
+
+        #progress-bar::-webkit-slider-thumb {
+            background: #3faffa;
+            border-radius: 50%;
+            height: 16px;
+            width: 16px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         }
 
         #current-time {
             font-size: 16px;
-            color: #555;
+            color: #bbb;
         }
 
         #lyrics-container {
@@ -102,20 +113,27 @@
             max-height: 200px;
             overflow-y: auto;
             font-size: 14px;
-            color: #555;
-            background-color: #f9f9f9;
-            padding: 10px;
+            color: #bbb;
+            background-color: #333;
+            padding: 20px;
             border-radius: 8px;
-            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+            text-align: center; /* 置中對齊 */
+            white-space: normal; /* 自動換行 */
+            line-height: 1.6; /* 行間距 */
+        }
+
+        #lyrics-container pre {
+            white-space: pre-wrap; /* 使純文本歌詞可以自動換行 */
+            word-wrap: break-word; /* 長單字也會自動換行 */
         }
 
         footer {
             margin-top: 20px;
             font-size: 14px;
-            color: #aaa;
+            color: #888;
         }
 
-        /* 側邊欄樣式 */
         .sidebar-button {
             font-size: 30px;
             position: fixed;
@@ -158,7 +176,6 @@
             background-color: #444;
         }
 
-        /* 讓內容區域能點擊側邊欄以外區域時自動收回 */
         .content-overlay {
             display: none;
             position: fixed;
@@ -232,6 +249,7 @@
 
         let currentTrackIndex = 0;
         let musicData = [];
+        let lastTime = 0; // 用來記錄最後更新的時間
 
         // 加載音樂資料 JSON
         fetch('https://oinktech.github.io/musiccccc/musicData.json')
@@ -269,29 +287,7 @@
                 loadTrack(currentTrackIndex);
             });
 
-        // 顯示歌詞
-        // 顯示歌詞
-function fetchLyrics(lyricsFile) {
-    fetch(lyricsFile)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('無法加載歌詞文件: ' + lyricsFile);
-            }
-            return response.text();
-        })
-        .then(lyrics => {
-            // 使用 marked.js 解析歌詞並顯示
-            lyricsContainer.innerHTML = marked(lyrics);
-        })
-        .catch(err => {
-            console.error('Failed to load lyrics:', err);
-            lyricsContainer.innerHTML = `<p>無法加載歌詞，請稍後重試。</p>`;
-        });
-}
-
-
-
-        // 控制播放/暫停
+        // 播放/暫停控制
         function togglePlay() {
             if (isPlaying) {
                 audio.pause();
@@ -303,42 +299,62 @@ function fetchLyrics(lyricsFile) {
             isPlaying = !isPlaying;
         }
 
-        // 更新進度條
-        audio.ontimeupdate = () => {
-            let progress = (audio.currentTime / audio.duration) * 100 || 0;
-            progressBar.value = progress;
-
-            let minutes = Math.floor(audio.currentTime / 60);
-            let seconds = Math.floor(audio.currentTime % 60);
-            currentTimeDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        };
-
-        // 跳轉進度條
-        function updateProgress() {
-            let progress = progressBar.value;
-            audio.currentTime = (progress / 100) * audio.duration;
-        }
-
-        // 播放下一首
-        function nextTrack() {
-            currentTrackIndex = (currentTrackIndex + 1) % musicData.length;
-            loadTrack(currentTrackIndex);
-            togglePlay();
-        }
-
-        // 播放上一首
+        // 上一首
         function prevTrack() {
             currentTrackIndex = (currentTrackIndex - 1 + musicData.length) % musicData.length;
             loadTrack(currentTrackIndex);
-            togglePlay();
+            if (isPlaying) {
+                audio.play();
+            }
         }
 
-        // 控制側邊欄顯示/隱藏
+        // 下一首
+        function nextTrack() {
+            currentTrackIndex = (currentTrackIndex + 1) % musicData.length;
+            loadTrack(currentTrackIndex);
+            if (isPlaying) {
+                audio.play();
+            }
+        }
+
+        // 更新播放進度
+        audio.ontimeupdate = function () {
+            let currentTime = audio.currentTime;
+            let duration = audio.duration;
+            let progress = (currentTime / duration) * 100;
+            progressBar.value = progress;
+
+            let minutes = Math.floor(currentTime / 60);
+            let seconds = Math.floor(currentTime % 60);
+            currentTimeDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        };
+
+        // 更新播放進度條
+        function updateProgress() {
+            let duration = audio.duration;
+            let newTime = (progressBar.value / 100) * duration;
+            audio.currentTime = newTime;
+        }
+
+        // 加載歌詞
+        function fetchLyrics(file) {
+            fetch(file)
+                .then(response => response.text())
+                .then(lyrics => {
+                    lyricsContainer.innerHTML = `<pre>${lyrics}</pre>`;
+                })
+                .catch(error => {
+                    lyricsContainer.innerHTML = '<p>無法加載歌詞。</p>';
+                });
+        }
+
+        // 顯示/隱藏側邊欄
         function toggleSidebar() {
             sidebar.classList.toggle('open');
             overlay.classList.toggle('active');
         }
 
+        // 關閉側邊欄
         function closeSidebar() {
             sidebar.classList.remove('open');
             overlay.classList.remove('active');
